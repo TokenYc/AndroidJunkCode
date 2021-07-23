@@ -1,5 +1,6 @@
 apply plugin: 'groovy'
-apply plugin: "com.vanniktech.maven.publish"
+apply plugin: "signing"
+apply plugin: "maven-publish"
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
@@ -7,4 +8,75 @@ dependencies {
     implementation localGroovy()
     implementation 'com.squareup:javapoet:1.13.0'
     implementation 'com.android.tools.build:gradle:3.0.0'
+}
+
+task sourcesJar(type: Jar) {
+    classifier = 'sources'
+    from sourceSets.main.java.srcDirs
+}
+
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+tasks.withType(Javadoc) {
+    options.addStringOption('Xdoclint:none', '-quiet')
+    options.addStringOption('encoding', 'UTF-8')
+    options.addStringOption('charSet', 'UTF-8')
+}
+
+afterEvaluate {
+    publishing {
+        publications {
+            mavenAndroid(MavenPublication) {
+                groupId "io.github.tokenyc"
+                artifactId "yc"
+                version "1.0.0"
+                artifact sourcesJar
+                artifact javadocJar
+                artifact('build/libs/dateAndTime-1.0.jar') //
+                // 配置 pom 文件格式
+                pom {
+                    packaging = 'jar'
+                    name = "yc"
+                    description = "yc"
+                    url = "https://github.com/TokenYc/AndroidJunkCode"
+                    licenses {
+                        license {
+                            name = 'The Apache Software License, Version 2.0'
+                            url = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+                        }
+                    }
+                    developers {
+                        developer {
+                            id = 'yc'
+                            name = 'yc'
+                            email = '247067345@qq.com'
+                        }
+                    }
+                    scm {
+                        connection = "https://github.com/TokenYc/AndroidJunkCode"
+                        developerConnection = "https://github.com/TokenYc/AndroidJunkCode.git"
+                        url = "https://github.com/TokenYc/AndroidJunkCode"
+                    }
+                }
+            }
+        }
+        // 配置远程仓库
+        repositories {
+            maven {
+                url = 'https://s01.oss.sonatype.org/service/local/staging/deploy/maven2/'
+                credentials {
+                    username "xxxx"
+                    password "xxxx"
+                }
+            }
+        }
+    }
+
+    signing {
+        sign publishing.publications.mavenAndroid
+    }
 }
